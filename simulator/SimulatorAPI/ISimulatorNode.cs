@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -42,7 +44,7 @@ namespace Automatak.Simulator.API
             get;
         }
 
-        ISimulatorNode Create(ISimulatorNodeCallbacks callbacks);
+        ISimulatorNode? Create(ISimulatorNodeCallbacks callbacks);
     }
     
     public interface ISimulatorNode

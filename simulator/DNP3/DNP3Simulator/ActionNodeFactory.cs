@@ -11,10 +11,10 @@ namespace Automatak.Simulator.DNP3
     class ActionNodeFactory : ISimulatorNodeFactory
     {
         readonly string displayName;
-        readonly Func<ISimulatorNodeCallbacks, ISimulatorNode> factory;
+        readonly Func<ISimulatorNodeCallbacks, ISimulatorNode?> factory;
 
 
-        public ActionNodeFactory(string displayName, Func<ISimulatorNodeCallbacks, ISimulatorNode> factory)
+        public ActionNodeFactory(string displayName, Func<ISimulatorNodeCallbacks, ISimulatorNode?> factory)
         {
             this.displayName = displayName;
             this.factory = factory;
@@ -25,7 +25,7 @@ namespace Automatak.Simulator.DNP3
             get { return displayName; }
         }
 
-        ISimulatorNode ISimulatorNodeFactory.Create(ISimulatorNodeCallbacks callbacks)
+        ISimulatorNode? ISimulatorNodeFactory.Create(ISimulatorNodeCallbacks callbacks)
         {
             return factory.Invoke(callbacks);
         }

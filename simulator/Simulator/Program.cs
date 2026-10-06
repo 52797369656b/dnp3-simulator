@@ -22,14 +22,7 @@ namespace Automatak.Simulator
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             
-            var splashOnLoad = true;
-
-            if (args.Length >= 1 && args[0] == "-nosplash")
-            {
-                splashOnLoad = false;
-            }
-
-            var form = new SimulatorForm(plugins, splashOnLoad);
+            var form = new SimulatorForm(plugins);
             Application.Run(form);
         }
     }

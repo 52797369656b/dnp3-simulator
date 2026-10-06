@@ -60,7 +60,7 @@ namespace Automatak.Simulator.DNP3
             }
         }        
 
-        ISimulatorNode CreateMaster(ISimulatorNodeCallbacks callbacks)
+        ISimulatorNode? CreateMaster(ISimulatorNodeCallbacks callbacks)
         {
             using (var dialog = new Components.MasterDialog())
             {
@@ -89,7 +89,7 @@ namespace Automatak.Simulator.DNP3
             }   
         }
 
-        ISimulatorNode CreateOutstation(ISimulatorNodeCallbacks callbacks)
+        ISimulatorNode? CreateOutstation(ISimulatorNodeCallbacks callbacks)
         {
             using (var dialogModules = new Components.OutstationModuleDialog(config.OutstationModules))
             {
@@ -104,7 +104,7 @@ namespace Automatak.Simulator.DNP3
             }            
         }
 
-        ISimulatorNode CreateOutstation(ISimulatorNodeCallbacks callbacks, IOutstationModule module)
+        ISimulatorNode? CreateOutstation(ISimulatorNodeCallbacks callbacks, IOutstationModule module)
         {
             using (var dialog = new Components.OutstationDialog(config, module))
             {

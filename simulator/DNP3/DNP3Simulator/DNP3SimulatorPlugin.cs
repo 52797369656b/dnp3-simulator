@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -11,6 +12,7 @@ using Automatak.DNP3.Interface;
 using Automatak.Simulator.Commons;
 using Automatak.Simulator.API;
 using Automatak.Simulator.DNP3.API;
+using Automatak.Simulator.DNP3.Commons;
 
 namespace Automatak.Simulator.DNP3
 {
@@ -22,7 +24,7 @@ namespace Automatak.Simulator.DNP3
     };
 
 
-    class DNP3SimulatorPlugin : ISimulatorPlugin
+    class DNP3SimulatorPlugin : ISimulatorPlugin, ISimulatorPluginCsvLoader
     {
         readonly ImageList imgList = new ImageList();
         readonly ILogHandler logHandler;
@@ -67,7 +69,71 @@ namespace Automatak.Simulator.DNP3
         }
 
 
-        ISimulatorNode ISimulatorPlugin.Create(ISimulatorNodeCallbacks callbacks)
+        PluginCsvLoadResult? ISimulatorPluginCsvLoader.LoadFromCsvConfiguration(string alias, string host, ushort port, ushort masterAddress, ushort slaveAddress, ISimulatorNodeCallbacks callbacks)
+        {
+            var retry = new ChannelRetry(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
+            var endpoint = new IPEndpoint(host, port);
+            var channel = manager.AddTCPClient(alias, 0u, retry, new List<IPEndpoint> { endpoint }, ChannelListener.None());
+
+            if (channel == null)
+            {
+                return null;
+            }
+
+            var channelNode = new ChannelNode(config, channel, callbacks, alias);
+
+            var masterAlias = alias + "-master";
+            var masterCache = new MeasurementCache();
+
+            var masterStack = new MasterStackConfig();
+            masterStack.link = new LinkConfig(true)
+            {
+                localAddr = masterAddress,
+                remoteAddr = slaveAddress,
+                responseTimeout = TimeSpan.FromSeconds(5),
+                keepAliveTimeout = TimeSpan.FromSeconds(30)
+            };
+            masterStack.master = new MasterConfig();
+
+            var master = channel.AddMaster(masterAlias, masterCache, DefaultMasterApplication.Instance, masterStack);
+            ISimulatorNode? masterNode = null;
+            if (master != null)
+            {
+                master.Enable();
+                masterNode = new MasterNode(masterCache, master, callbacks, masterAlias);
+            }
+
+            var outstationModule = config.OutstationModules.FirstOrDefault();
+            ISimulatorNode? outstationNode = null;
+            if (outstationModule != null)
+            {
+                var factory = outstationModule.CreateFactory();
+                var outstationConfig = outstationModule.DefaultConfig;
+                outstationConfig.link = new LinkConfig(false)
+                {
+                    localAddr = slaveAddress,
+                    remoteAddr = masterAddress,
+                    responseTimeout = TimeSpan.FromSeconds(5),
+                    keepAliveTimeout = TimeSpan.FromSeconds(30)
+                };
+
+                var outstation = channel.AddOutstation(alias + "-slave", factory.CommandHandler, factory.Application, outstationConfig);
+                if (outstation != null)
+                {
+                    var instance = factory.CreateInstance(outstation, alias + "-slave", outstationConfig);
+                    outstation.Enable();
+                    if (instance.ShowFormOnCreation)
+                    {
+                        instance.ShowForm();
+                    }
+                    outstationNode = new OutstationNode(outstation, instance, callbacks);
+                }
+            }
+
+            return new PluginCsvLoadResult(channelNode, masterNode, outstationNode);
+        }
+
+        ISimulatorNode? ISimulatorPlugin.Create(ISimulatorNodeCallbacks callbacks)
         {
             using (var dialog = new Components.ChannelDialog())
             {

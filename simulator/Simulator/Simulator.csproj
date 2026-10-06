@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Pomoc.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Commons\Commons.csproj" />
     <ProjectReference Include="..\DNP3\DNP3Simulator\DNP3Module.csproj" />
     <ProjectReference Include="..\SimulatorAPI\ModuleAPI.csproj" />
