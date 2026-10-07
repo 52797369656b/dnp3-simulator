@@ -12,6 +12,7 @@
 *.userosscache
 *.sln.docstates
 
+!THIRD_PARTY_LICENSES.txt
 
 *.userprefs
 
