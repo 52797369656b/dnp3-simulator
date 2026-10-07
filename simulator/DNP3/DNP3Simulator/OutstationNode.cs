@@ -11,12 +11,13 @@ using Automatak.Simulator.API;
 
 namespace Automatak.Simulator.DNP3
 {
-    class OutstationNode : ISimulatorNode
+    class OutstationNode : ISimulatorNode, ISimulatorNodeCsvConfiguration
     {
         readonly IOutstation outstation;
         readonly IOutstationInstance instance;                     
         readonly ISimulatorNodeCallbacks callbacks;        
         readonly ISimulatorNodeAction openAction;       
+        readonly IReadOnlyDictionary<string, string> csvConfiguration;
                 
         string ISimulatorNode.Alias
         {
@@ -26,16 +27,21 @@ namespace Automatak.Simulator.DNP3
             }
         }
 
-        public OutstationNode(IOutstation outstation, IOutstationInstance instance, ISimulatorNodeCallbacks callbacks)
+        public OutstationNode(IOutstation outstation, IOutstationInstance instance, ISimulatorNodeCallbacks callbacks, IReadOnlyDictionary<string, string>? csvConfiguration = null)
         {            
             this.outstation = outstation;
             this.instance = instance;
             this.callbacks = callbacks;                     
+            this.csvConfiguration = csvConfiguration ?? new Dictionary<string, string>();
 
             this.openAction = new NodeAction("Open", () => OpenForm());
 
             this.callbacks.ChangeImage(IconIndex.Outstation);
         }
+
+        string ISimulatorNodeCsvConfiguration.CsvConfigurationType => "outstation";
+
+        IReadOnlyDictionary<string, string> ISimulatorNodeCsvConfiguration.CsvConfiguration => csvConfiguration;
 
         void OpenForm()
         {

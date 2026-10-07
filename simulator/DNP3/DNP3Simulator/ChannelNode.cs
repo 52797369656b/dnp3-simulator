@@ -12,12 +12,13 @@ using Automatak.Simulator.DNP3.Commons;
 
 namespace Automatak.Simulator.DNP3
 {
-    class ChannelNode : ISimulatorNode
+    class ChannelNode : ISimulatorNode, ISimulatorNodeCsvConfiguration
     {
         readonly IDNP3Config config;
         readonly IChannel channel;
         readonly ISimulatorNodeCallbacks callbacks;
         readonly string alias;        
+        readonly IReadOnlyDictionary<string, string> csvConfiguration;
 
         readonly ISimulatorNodeFactory masterFactory;
         readonly ISimulatorNodeFactory outstationFactory;
@@ -30,12 +31,13 @@ namespace Automatak.Simulator.DNP3
             }
         }
 
-        public ChannelNode(IDNP3Config config, IChannel channel, ISimulatorNodeCallbacks callbacks, string alias)
+        public ChannelNode(IDNP3Config config, IChannel channel, ISimulatorNodeCallbacks callbacks, string alias, IReadOnlyDictionary<string, string>? csvConfiguration = null)
         {
             this.config = config;
             this.channel = channel;
             this.callbacks = callbacks;
             this.alias = alias;
+            this.csvConfiguration = csvConfiguration ?? new Dictionary<string, string>();
             
             this.callbacks.ChangeImage(IconIndex.Channel);
 
@@ -45,6 +47,10 @@ namespace Automatak.Simulator.DNP3
 
             callbacks.ChangeState(GetNodeState(ChannelState.OPEN));
         }
+
+        string ISimulatorNodeCsvConfiguration.CsvConfigurationType => "channel";
+
+        IReadOnlyDictionary<string, string> ISimulatorNodeCsvConfiguration.CsvConfiguration => csvConfiguration;
 
         
         static NodeState GetNodeState(ChannelState state)
@@ -79,7 +85,7 @@ namespace Automatak.Simulator.DNP3
                     else
                     {                        
                         master.Enable();
-                        return new MasterNode(cache, master, callbacks, alias);
+                        return new MasterNode(cache, master, callbacks, alias, dialog.CsvConfiguration);
                     }                    
                 }
                 else
@@ -130,7 +136,7 @@ namespace Automatak.Simulator.DNP3
                             instance.ShowForm();
                         }
 
-                        return new OutstationNode(outstation, instance, callbacks);
+                        return new OutstationNode(outstation, instance, callbacks, dialog.CsvConfiguration);
                     }
                 }
                 else

@@ -80,7 +80,15 @@ namespace Automatak.Simulator.DNP3
                 return null;
             }
 
-            var channelNode = new ChannelNode(config, channel, callbacks, alias);
+            var channelNode = new ChannelNode(config, channel, callbacks, alias, new Dictionary<string, string>
+            {
+                ["channel_name"] = alias,
+                ["channel_type"] = "TCP Client",
+                ["channel_ip"] = host,
+                ["channel_port"] = port.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ["channel_retry_min_ms"] = "1000",
+                ["channel_retry_max_ms"] = "5000"
+            });
 
             var masterAlias = alias + "-master";
             var masterCache = new MeasurementCache();
@@ -100,7 +108,12 @@ namespace Automatak.Simulator.DNP3
             if (master != null)
             {
                 master.Enable();
-                masterNode = new MasterNode(masterCache, master, callbacks, masterAlias);
+                masterNode = new MasterNode(masterCache, master, callbacks, masterAlias, new Dictionary<string, string>
+                {
+                    ["master_name"] = masterAlias,
+                    ["master_address"] = masterAddress.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    ["slave_address"] = slaveAddress.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                });
             }
 
             var outstationModule = config.OutstationModules.FirstOrDefault();
@@ -126,7 +139,12 @@ namespace Automatak.Simulator.DNP3
                     {
                         instance.ShowForm();
                     }
-                    outstationNode = new OutstationNode(outstation, instance, callbacks);
+                    outstationNode = new OutstationNode(outstation, instance, callbacks, new Dictionary<string, string>
+                    {
+                        ["outstation_name"] = alias + "-slave",
+                        ["master_address"] = masterAddress.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["slave_address"] = slaveAddress.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    });
                 }
             }
 
@@ -141,7 +159,7 @@ namespace Automatak.Simulator.DNP3
                 if (dialog.DialogResult == DialogResult.OK)
                 {
                     var channel = dialog.ChannelAction!.Invoke(manager);
-                    return new ChannelNode(config, channel, callbacks, dialog.SelectedAlias);
+                    return new ChannelNode(config, channel, callbacks, dialog.SelectedAlias, dialog.CsvConfiguration);
                 }
                 else
                 {

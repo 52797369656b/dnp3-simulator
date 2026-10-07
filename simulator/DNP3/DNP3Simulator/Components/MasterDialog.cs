@@ -44,5 +44,17 @@ namespace Automatak.Simulator.DNP3.Components
                 return config;
             }
         }
+
+        public IReadOnlyDictionary<string, string> CsvConfiguration
+        {
+            get
+            {
+                var values = CsvConfigurationSnapshot.Capture(this, "master");
+                values["master_name"] = SelectedAlias;
+                values["master_address"] = linkConfigControl.Configuration.localAddr.ToString();
+                values["slave_address"] = linkConfigControl.Configuration.remoteAddr.ToString();
+                return values;
+            }
+        }
     }
 }

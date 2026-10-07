@@ -101,6 +101,24 @@ namespace Automatak.Simulator.DNP3.Components
             }
         }
 
+        public IReadOnlyDictionary<string, string> CsvConfiguration
+        {
+            get
+            {
+                var link = linkConfigControl.Configuration;
+                var values = CsvConfigurationSnapshot.Capture(this, "outstation");
+                values["outstation_name"] = SelectedAlias;
+                values["outstation_template"] = comboBoxTemplate.SelectedItem?.ToString() ?? string.Empty;
+                values["master_address"] = link.remoteAddr.ToString();
+                values["slave_address"] = link.localAddr.ToString();
+                if (comboBoxTemplate.SelectedItem is string templateName && config.GetTemplateMaybeNull(templateName) is { } template)
+                {
+                    CsvConfigurationSnapshot.AddObjectValues(values, "outstation_template", template);
+                }
+                return values;
+            }
+        }
+
         void CheckState()
         {
             if (this.allowTemplateEdit && comboBoxTemplate.SelectedValue == null)

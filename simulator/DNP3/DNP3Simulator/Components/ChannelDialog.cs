@@ -134,6 +134,36 @@ namespace Automatak.Simulator.DNP3.Components
             }
         }
 
+        public IReadOnlyDictionary<string, string> CsvConfiguration
+        {
+            get
+            {
+                var values = CsvConfigurationSnapshot.Capture(this, "channel");
+                values["channel_name"] = SelectedAlias;
+                values["channel_type"] = tabControlChannelType.SelectedTab?.Text ?? string.Empty;
+                values["channel_retry_min_ms"] = numericUpDownMinRetryMS.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                values["channel_retry_max_ms"] = numericUpDownMaxRetryMS.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                switch (tabControlChannelType.SelectedIndex)
+                {
+                    case 0:
+                        values["channel_ip"] = textBoxHost.Text;
+                        values["channel_port"] = numericUpDownPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        break;
+                    case 1:
+                        values["channel_ip"] = textBoxServerHost.Text;
+                        values["channel_port"] = numericUpDownServerPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        break;
+                    case 2:
+                        values["channel_serial_device"] = comboBoxSerialDeviceName.Text;
+                        values["channel_serial_baud"] = numericUpDownBaud.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        break;
+                }
+
+                return values;
+            }
+        }
+
         private Func<IDNP3Manager, IChannel>? create;
 
         /*

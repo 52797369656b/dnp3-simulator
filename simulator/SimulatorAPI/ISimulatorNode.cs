@@ -76,5 +76,12 @@ namespace Automatak.Simulator.API
             get;
         }
     }
+
+    public interface ISimulatorNodeCsvConfiguration
+    {
+        string CsvConfigurationType { get; }
+
+        IReadOnlyDictionary<string, string> CsvConfiguration { get; }
+    }
     
 }

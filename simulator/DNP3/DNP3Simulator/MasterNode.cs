@@ -10,12 +10,13 @@ using Automatak.Simulator.DNP3.Commons;
 
 namespace Automatak.Simulator.DNP3
 {
-    class MasterNode : ISimulatorNode
+    class MasterNode : ISimulatorNode, ISimulatorNodeCsvConfiguration
     {        
         readonly MeasurementCache cache;
         readonly IMaster master;
         readonly ISimulatorNodeCallbacks callbacks;
         readonly string alias;
+        readonly IReadOnlyDictionary<string, string> csvConfiguration;
         readonly ISimulatorNodeAction openAction;        
 
         MasterForm? form;
@@ -28,17 +29,22 @@ namespace Automatak.Simulator.DNP3
             }
         }
 
-        public MasterNode(MeasurementCache cache, IMaster master, ISimulatorNodeCallbacks callbacks, string alias)
+        public MasterNode(MeasurementCache cache, IMaster master, ISimulatorNodeCallbacks callbacks, string alias, IReadOnlyDictionary<string, string>? csvConfiguration = null)
         {            
             this.cache = cache;
             this.master = master;
             this.callbacks = callbacks;
             this.alias = alias;
+            this.csvConfiguration = csvConfiguration ?? new Dictionary<string, string>();
 
             this.callbacks.ChangeImage(IconIndex.Master);
 
             this.openAction = new NodeAction("Open", () => OpenForm());
         }
+
+        string ISimulatorNodeCsvConfiguration.CsvConfigurationType => "master";
+
+        IReadOnlyDictionary<string, string> ISimulatorNodeCsvConfiguration.CsvConfiguration => csvConfiguration;
 
         void OpenForm()
         {

@@ -357,20 +357,65 @@ namespace Automatak.Simulator
                         return;
                     }
 
-                    var data = new List<string>();
-                    data.Add("channel_name,channel_ip,channel_port,master_address,slave_address");
-
+                    var rows = new List<Dictionary<string, string>>();
                     foreach (TreeNode node in treeView.Nodes)
                     {
-                        if (node.Tag is not ISimulatorNode simNode)
+                        if (node.Tag is not ISimulatorNodeCsvConfiguration channelConfiguration)
                         {
                             continue;
                         }
 
-                        data.Add($"{simNode.DisplayName},127.0.0.1,20000,10,20");
+                        var masters = node.Nodes.Cast<TreeNode>()
+                            .Select(child => child.Tag)
+                            .OfType<ISimulatorNodeCsvConfiguration>()
+                            .Where(configuration => configuration.CsvConfigurationType == "master")
+                            .ToList();
+                        var outstations = node.Nodes.Cast<TreeNode>()
+                            .Select(child => child.Tag)
+                            .OfType<ISimulatorNodeCsvConfiguration>()
+                            .Where(configuration => configuration.CsvConfigurationType == "outstation")
+                            .ToList();
+
+                        var masterConfigurations = masters.Count == 0
+                            ? new IReadOnlyDictionary<string, string>[] { new Dictionary<string, string>() }
+                            : masters.Select(configuration => configuration.CsvConfiguration).ToArray();
+                        var outstationConfigurations = outstations.Count == 0
+                            ? new IReadOnlyDictionary<string, string>[] { new Dictionary<string, string>() }
+                            : outstations.Select(configuration => configuration.CsvConfiguration).ToArray();
+
+                        foreach (var master in masterConfigurations)
+                        {
+                            foreach (var outstation in outstationConfigurations)
+                            {
+                                var row = new Dictionary<string, string>(channelConfiguration.CsvConfiguration, StringComparer.OrdinalIgnoreCase);
+                                foreach (var value in master)
+                                {
+                                    row[value.Key] = value.Value;
+                                }
+                                foreach (var value in outstation)
+                                {
+                                    row[value.Key] = value.Value;
+                                }
+                                rows.Add(row);
+                            }
+                        }
                     }
 
-                    File.WriteAllLines(dialog.FileName, data);
+                    if (rows.Count == 0)
+                    {
+                        MessageBox.Show(this, "Nie znaleziono konfiguracji DNP3 do zapisania.", "Brak danych", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    var headers = rows.SelectMany(row => row.Keys)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(GetCsvColumnGroup)
+                        .ThenBy(header => header, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                    var data = new List<string> { string.Join(",", headers.Select(EscapeCsvField)) };
+                    data.AddRange(rows.Select(row => string.Join(",", headers.Select(header => EscapeCsvField(row.TryGetValue(header, out var value) ? value : string.Empty)))));
+
+                    File.WriteAllLines(dialog.FileName, data, Encoding.UTF8);
                     MessageBox.Show(this, "Konfiguracja zapisana do pliku CSV.", "Zapisano", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
@@ -378,6 +423,20 @@ namespace Automatak.Simulator
                     MessageBox.Show(this, ex.Message, "Błąd zapisu CSV", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private static int GetCsvColumnGroup(string header)
+        {
+            if (header.StartsWith("channel_", StringComparison.OrdinalIgnoreCase)) return 0;
+            if (header.StartsWith("master_", StringComparison.OrdinalIgnoreCase)) return 1;
+            if (header.StartsWith("outstation_", StringComparison.OrdinalIgnoreCase)) return 2;
+            if (header.Equals("slave_address", StringComparison.OrdinalIgnoreCase)) return 2;
+            return 3;
+        }
+
+        private static string EscapeCsvField(string value)
+        {
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
 
         private static List<CsvChannelConfiguration> LoadCsvConfigurations(string path)
