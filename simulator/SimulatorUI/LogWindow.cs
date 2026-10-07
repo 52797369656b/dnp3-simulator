@@ -18,7 +18,6 @@ namespace Automatak.Simulator.UI
         public LogWindow()
         {
             InitializeComponent();
-            this.UpdateStatus();
 
             var toolTipResume = new ToolTip();
             toolTipResume.SetToolTip(this.buttonPlay, "Resume auto-scrolling of the log window");
@@ -54,8 +53,9 @@ namespace Automatak.Simulator.UI
         void AddItems(IEnumerable<LogItem> lines)
         {
             this.logControl.AddRows(lines);
-            this.UpdateStatus();
         }        
+
+        public string RowCountText => $"Wiersze: {logControl.NumRows} / {logControl.MaxRows}";
 
         public Font LogFont
         {
@@ -64,16 +64,6 @@ namespace Automatak.Simulator.UI
             {
                 logControl.Font = value;
             }
-        }
-
-        void UpdateStatus()
-        { 
-            var format = "{0,5} / {1,-5}";
-
-            this.toolStripStatusLabel.Text = String.Format(
-                format, 
-                logControl.NumRows,
-                logControl.MaxRows);            
         }
 
         private void buttonPause_Click(object sender, EventArgs e)

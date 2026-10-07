@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -30,6 +31,12 @@ namespace Automatak.Simulator
             InitializeComponent();    
             
             this.plugins = plugins;
+            var version = typeof(SimulatorForm).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? typeof(SimulatorForm).Assembly.GetName().Version?.ToString(3)
+                ?? "unknown";
+            this.versionToolStripStatusLabel.Text = $"v{version.TrimStart('v', 'V')}";
+            this.rowCountToolStripStatusLabel.Text = this.logWindow1.RowCountText;
             this.fileLogger = new LogToFile();
             this.log = new LogMultiplexer(this.logWindow1, fileLogger);
 
@@ -213,6 +220,7 @@ namespace Automatak.Simulator
 
         private void timerMetrics_Tick(object sender, EventArgs e)
         {
+            this.rowCountToolStripStatusLabel.Text = this.logWindow1.RowCountText;
             var metrics = GetMetrics();
             this.listViewMetrics.SuspendLayout();
             this.listViewMetrics.Items.Clear();

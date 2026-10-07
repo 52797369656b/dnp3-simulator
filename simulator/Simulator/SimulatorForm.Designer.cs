@@ -52,6 +52,9 @@ namespace Automatak.Simulator
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.logWindow1 = new Automatak.Simulator.UI.LogWindow();
             this.timerMetrics = new System.Windows.Forms.Timer(this.components);
+            this.versionStatusStrip = new System.Windows.Forms.StatusStrip();
+            this.rowCountToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.versionToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.mainMenuStrip.SuspendLayout();
             this.mainPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
@@ -263,11 +266,37 @@ namespace Automatak.Simulator
             this.timerMetrics.Interval = 1000;
             this.timerMetrics.Tick += new System.EventHandler(this.timerMetrics_Tick);
             // 
+            // versionStatusStrip
+            //
+            this.versionStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.rowCountToolStripStatusLabel,
+            this.versionToolStripStatusLabel});
+            this.versionStatusStrip.Location = new System.Drawing.Point(0, 588);
+            this.versionStatusStrip.Name = "versionStatusStrip";
+            this.versionStatusStrip.SizingGrip = false;
+            this.versionStatusStrip.TabIndex = 3;
+            this.versionStatusStrip.Text = "versionStatusStrip";
+            // 
+            // rowCountToolStripStatusLabel
+            //
+            this.rowCountToolStripStatusLabel.Name = "rowCountToolStripStatusLabel";
+            this.rowCountToolStripStatusLabel.Padding = new System.Windows.Forms.Padding(6, 0, 0, 0);
+            this.rowCountToolStripStatusLabel.Size = new System.Drawing.Size(140, 17);
+            this.rowCountToolStripStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
+            // versionToolStripStatusLabel
+            // 
+            this.versionToolStripStatusLabel.Name = "versionToolStripStatusLabel";
+            this.versionToolStripStatusLabel.Size = new System.Drawing.Size(1221, 17);
+            this.versionToolStripStatusLabel.Spring = true;
+            this.versionToolStripStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // SimulatorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1236, 610);
+            this.Controls.Add(this.versionStatusStrip);
             this.Controls.Add(this.mainPanel);
             this.Controls.Add(this.mainMenuStrip);
             this.DoubleBuffered = true;
@@ -317,6 +346,9 @@ namespace Automatak.Simulator
         private LogFileControl logFileControl;
         private System.Windows.Forms.Button buttonMakeNote;
         private System.Windows.Forms.ImageList imageList;
+        private System.Windows.Forms.StatusStrip versionStatusStrip;
+        private System.Windows.Forms.ToolStripStatusLabel rowCountToolStripStatusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel versionToolStripStatusLabel;
 
     }
 }
