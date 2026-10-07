@@ -37,6 +37,12 @@ namespace Automatak.Simulator.DNP3.Components
             }
         }
 
+        public void SetAddresses(ushort localAddress, ushort remoteAddress)
+        {
+            this.numericUpDownSource.Value = localAddress;
+            this.numericUpDownDest.Value = remoteAddress;
+        }
+
         private void SetState()
         {
             this.groupBoxConfirmed.Enabled = this.checkBoxConfirmed.Checked;            

@@ -60,16 +60,17 @@ namespace Automatak.Simulator.DNP3.Components
         public void RestoreCsvConfiguration(IReadOnlyDictionary<string, string> values)
         {
             CsvConfigurationSnapshot.Restore(this, "master", values);
-            var link = linkConfigControl.Configuration;
+            ushort? localAddress = null;
+            ushort? remoteAddress = null;
             if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var localAddress))
             {
-                link.localAddr = localAddress;
+                this.localAddress = localAddress;
             }
             if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var remoteAddress))
             {
-                link.remoteAddr = remoteAddress;
+                this.remoteAddress = remoteAddress;
             }
-            linkConfigControl.Configuration = link;
+            linkConfigControl.SetAddresses(this.localAddress ?? Decimal.ToUInt16(linkConfigControl.Configuration.localAddr), this.remoteAddress ?? Decimal.ToUInt16(linkConfigControl.Configuration.remoteAddr));
             if (values.TryGetValue("master_name", out var alias))
             {
                 textBoxID.Text = alias;
