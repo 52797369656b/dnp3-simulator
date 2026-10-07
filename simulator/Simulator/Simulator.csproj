@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <None Update="Pomoc.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\THIRD_PARTY_LICENSES.txt" Link="THIRD_PARTY_LICENSES.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
