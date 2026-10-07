@@ -18,13 +18,9 @@ namespace Automatak.Simulator
                                                   
                  "This software is based on open source components with the following licenses:",
                  "",
-                 "opendnp3",                 
-                 "http://www.automatak.com/opendnp3",
-                 "http://www.apache.org/licenses/LICENSE-2.0.html",
+                 "OpenDNP3 - Apache License 2.0",
                  "",
-                 "asio",
-                 "http://think-async.com/",
-                 "http://www.boost.org/users/license.html",
+                 "ASIO - Boost Software License 1.0",
                  "",
                  "This software is distributed on an \"AS IS\" BASIS",
                  "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
@@ -39,13 +35,5 @@ namespace Automatak.Simulator
             this.Close();
         }
 
-        private void richTextBox1_LinkClicked(object sender, LinkClickedEventArgs e)
-        {
-            var linkText = e.LinkText;
-            if (!string.IsNullOrWhiteSpace(linkText))
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(linkText) { UseShellExecute = true });
-            }
-        }        
     }
 }

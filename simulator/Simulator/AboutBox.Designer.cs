@@ -55,12 +55,12 @@
             this.richTextBox1.Location = new System.Drawing.Point(20, 162);
             this.richTextBox1.Margin = new System.Windows.Forms.Padding(20);
             this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.DetectUrls = false;
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
             this.richTextBox1.Size = new System.Drawing.Size(522, 314);
             this.richTextBox1.TabIndex = 1;
             this.richTextBox1.Text = "";
-            this.richTextBox1.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBox1_LinkClicked);
             // 
             // AboutBox
             // 

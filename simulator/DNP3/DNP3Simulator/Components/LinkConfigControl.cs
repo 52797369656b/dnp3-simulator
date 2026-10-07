@@ -37,10 +37,16 @@ namespace Automatak.Simulator.DNP3.Components
             }
         }
 
-        public void SetAddresses(ushort localAddress, ushort remoteAddress)
+        public void SetAddresses(ushort? localAddress, ushort? remoteAddress)
         {
-            this.numericUpDownSource.Value = localAddress;
-            this.numericUpDownDest.Value = remoteAddress;
+            if (localAddress.HasValue)
+            {
+                this.numericUpDownSource.Value = localAddress.Value;
+            }
+            if (remoteAddress.HasValue)
+            {
+                this.numericUpDownDest.Value = remoteAddress.Value;
+            }
         }
 
         private void SetState()

@@ -62,15 +62,15 @@ namespace Automatak.Simulator.DNP3.Components
             CsvConfigurationSnapshot.Restore(this, "master", values);
             ushort? localAddress = null;
             ushort? remoteAddress = null;
-            if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var localAddress))
+            if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var parsedLocalAddress))
             {
-                this.localAddress = localAddress;
+                localAddress = parsedLocalAddress;
             }
-            if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var remoteAddress))
+            if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var parsedRemoteAddress))
             {
-                this.remoteAddress = remoteAddress;
+                remoteAddress = parsedRemoteAddress;
             }
-            linkConfigControl.SetAddresses(this.localAddress ?? Decimal.ToUInt16(linkConfigControl.Configuration.localAddr), this.remoteAddress ?? Decimal.ToUInt16(linkConfigControl.Configuration.remoteAddr));
+            linkConfigControl.SetAddresses(localAddress, remoteAddress);
             if (values.TryGetValue("master_name", out var alias))
             {
                 textBoxID.Text = alias;

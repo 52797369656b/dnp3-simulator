@@ -122,16 +122,17 @@ namespace Automatak.Simulator.DNP3.Components
         public void RestoreCsvConfiguration(IReadOnlyDictionary<string, string> values)
         {
             CsvConfigurationSnapshot.Restore(this, "outstation", values);
-            var link = linkConfigControl.Configuration;
-            if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var localAddress))
+            ushort? localAddress = null;
+            ushort? remoteAddress = null;
+            if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var parsedLocalAddress))
             {
-                link.localAddr = localAddress;
+                localAddress = parsedLocalAddress;
             }
-            if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var remoteAddress))
+            if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var parsedRemoteAddress))
             {
-                link.remoteAddr = remoteAddress;
+                remoteAddress = parsedRemoteAddress;
             }
-            linkConfigControl.Configuration = link;
+            linkConfigControl.SetAddresses(localAddress, remoteAddress);
             if (values.TryGetValue("outstation_name", out var alias))
             {
                 textBoxID.Text = alias;
