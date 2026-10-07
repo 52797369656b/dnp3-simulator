@@ -56,5 +56,24 @@ namespace Automatak.Simulator.DNP3.Components
                 return values;
             }
         }
+
+        public void RestoreCsvConfiguration(IReadOnlyDictionary<string, string> values)
+        {
+            CsvConfigurationSnapshot.Restore(this, "master", values);
+            var link = linkConfigControl.Configuration;
+            if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var localAddress))
+            {
+                link.localAddr = localAddress;
+            }
+            if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var remoteAddress))
+            {
+                link.remoteAddr = remoteAddress;
+            }
+            linkConfigControl.Configuration = link;
+            if (values.TryGetValue("master_name", out var alias))
+            {
+                textBoxID.Text = alias;
+            }
+        }
     }
 }

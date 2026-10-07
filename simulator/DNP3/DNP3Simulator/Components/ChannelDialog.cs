@@ -164,6 +164,43 @@ namespace Automatak.Simulator.DNP3.Components
             }
         }
 
+        public void RestoreCsvConfiguration(IReadOnlyDictionary<string, string> values)
+        {
+            CsvConfigurationSnapshot.Restore(this, "channel", values);
+            if (values.TryGetValue("channel_ip", out var host))
+            {
+                if (tabControlChannelType.SelectedIndex == 1)
+                {
+                    textBoxServerHost.Text = host;
+                }
+                else if (tabControlChannelType.SelectedIndex == 0)
+                {
+                    textBoxHost.Text = host;
+                }
+            }
+            if (values.TryGetValue("channel_port", out var portText) && decimal.TryParse(portText, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var port))
+            {
+                if (tabControlChannelType.SelectedIndex == 1)
+                {
+                    numericUpDownServerPort.Value = Math.Min(numericUpDownServerPort.Maximum, Math.Max(numericUpDownServerPort.Minimum, port));
+                }
+                else if (tabControlChannelType.SelectedIndex == 0)
+                {
+                    numericUpDownPort.Value = Math.Min(numericUpDownPort.Maximum, Math.Max(numericUpDownPort.Minimum, port));
+                }
+            }
+            if (values.TryGetValue("channel_serial_device", out var device))
+            {
+                comboBoxSerialDeviceName.Text = device;
+            }
+            if (values.TryGetValue("channel_name", out var alias))
+            {
+                textBoxID.Text = alias;
+            }
+
+            create = GetCreateFunctorMaybeNull();
+        }
+
         private Func<IDNP3Manager, IChannel>? create;
 
         /*

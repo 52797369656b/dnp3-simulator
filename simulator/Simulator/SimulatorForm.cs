@@ -296,35 +296,26 @@ namespace Automatak.Simulator
                         return;
                     }
 
-                    foreach (var config in configs)
+                    foreach (var channelGroup in configs.GroupBy(config => config.ChannelKey, StringComparer.OrdinalIgnoreCase))
                     {
+                        var channelConfigurations = channelGroup
+                            .Select(config => (IReadOnlyDictionary<string, string>)config.Values)
+                            .ToList();
+                        var config = channelGroup.First();
                         var callbacks = new TreeNodeCallbacks(this);
-                        var created = dnpPlugin.LoadFromCsvConfiguration(
-                            string.IsNullOrWhiteSpace(config.ChannelName) ? "channel" : config.ChannelName,
-                            config.Host,
-                            config.Port,
-                            config.MasterAddress,
-                            config.SlaveAddress,
-                            callbacks);
+                        var created = dnpPlugin.LoadFromCsvConfiguration(channelConfigurations, callbacks);
 
                         if (created == null)
                         {
-                            MessageBox.Show(this, $"Nie udało się utworzyć kanału dla {config.Host}:{config.Port}", "Błąd konfiguacji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            MessageBox.Show(this, $"Nie udało się utworzyć kanału {config.ChannelName} ({config.ChannelDescription}).", "Błąd konfiguracji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             continue;
                         }
 
                         BindNode(created.Channel, callbacks.node, dnpTreeView.Nodes);
-
-                        if (created.Master != null)
+                        foreach (var child in created.Children)
                         {
-                            var masterCallbacks = new TreeNodeCallbacks(this);
-                            BindNode(created.Master, masterCallbacks.node, callbacks.node.Nodes);
-                        }
-
-                        if (created.Outstation != null)
-                        {
-                            var outstationCallbacks = new TreeNodeCallbacks(this);
-                            BindNode(created.Outstation, outstationCallbacks.node, callbacks.node.Nodes);
+                            var childCallbacks = new TreeNodeCallbacks(this);
+                            BindNode(child, childCallbacks.node, callbacks.node.Nodes);
                         }
                     }
                 }
@@ -485,40 +476,44 @@ namespace Automatak.Simulator
         private sealed class CsvChannelConfiguration
         {
             public string ChannelName { get; set; } = "channel";
-            public string Host { get; set; } = "127.0.0.1";
-            public ushort Port { get; set; } = 20000;
-            public ushort MasterAddress { get; set; } = 10;
-            public ushort SlaveAddress { get; set; } = 20;
+            public string ChannelDescription { get; set; } = string.Empty;
+            public Dictionary<string, string> Values { get; private set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            public string ChannelKey => string.Join("|", Values
+                .Where(value => value.Key.StartsWith("channel_", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(value => value.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(value => $"{value.Key}={value.Value}"));
 
             public static CsvChannelConfiguration? FromDictionary(Dictionary<string, string> row)
             {
                 var host = GetValue(row, "channel_ip", "ip", "host", "server_ip", "channel_host", "remote_ip");
-                if (string.IsNullOrWhiteSpace(host))
+                var channelType = GetValue(row, "channel_type") ?? "TCP Client";
+                var isSerial = channelType.Contains("serial", StringComparison.OrdinalIgnoreCase);
+                if (!isSerial && string.IsNullOrWhiteSpace(host))
                 {
                     return null;
                 }
 
                 var portText = GetValue(row, "channel_port", "port", "server_port", "tcp_port");
-                if (!ushort.TryParse(portText, out var port))
+                if (!isSerial && !ushort.TryParse(portText, out _))
                 {
                     return null;
                 }
 
-                var masterText = GetValue(row, "master_address", "master_addr", "master", "dnp3_master_address");
-                var slaveText = GetValue(row, "slave_address", "slave_addr", "slave", "dnp3_slave_address");
-
-                if (!ushort.TryParse(masterText, out var masterAddress) || !ushort.TryParse(slaveText, out var slaveAddress))
+                var channelName = GetValue(row, "channel_name", "channel", "id", "alias", "name") ?? "channel";
+                var isLegacy = !row.ContainsKey("channel_type");
+                row["channel_name"] = channelName;
+                row["channel_type"] = channelType;
+                if (isLegacy)
                 {
-                    return null;
+                    row["legacy_csv_format"] = "true";
                 }
 
                 return new CsvChannelConfiguration
                 {
-                    ChannelName = GetValue(row, "channel_name", "channel", "id", "alias", "name") ?? "channel",
-                    Host = host,
-                    Port = port,
-                    MasterAddress = masterAddress,
-                    SlaveAddress = slaveAddress
+                    ChannelName = channelName,
+                    ChannelDescription = isSerial ? GetValue(row, "channel_serial_device") ?? "Serial" : $"{host}:{portText}",
+                    Values = row
                 };
             }
 

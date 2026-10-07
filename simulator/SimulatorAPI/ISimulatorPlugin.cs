@@ -13,21 +13,19 @@ namespace Automatak.Simulator.API
 {
     public sealed class PluginCsvLoadResult
     {
-        public PluginCsvLoadResult(ISimulatorNode channel, ISimulatorNode? master, ISimulatorNode? outstation)
+        public PluginCsvLoadResult(ISimulatorNode channel, IEnumerable<ISimulatorNode> children)
         {
             Channel = channel;
-            Master = master;
-            Outstation = outstation;
+            Children = children.ToList();
         }
 
         public ISimulatorNode Channel { get; }
-        public ISimulatorNode? Master { get; }
-        public ISimulatorNode? Outstation { get; }
+        public IReadOnlyList<ISimulatorNode> Children { get; }
     }
 
     public interface ISimulatorPluginCsvLoader
     {
-        PluginCsvLoadResult? LoadFromCsvConfiguration(string alias, string host, ushort port, ushort masterAddress, ushort slaveAddress, ISimulatorNodeCallbacks callbacks);
+        PluginCsvLoadResult? LoadFromCsvConfiguration(IReadOnlyList<IReadOnlyDictionary<string, string>> configurations, ISimulatorNodeCallbacks callbacks);
     }
 
     public interface ISimulatorPlugin

@@ -69,86 +69,108 @@ namespace Automatak.Simulator.DNP3
         }
 
 
-        PluginCsvLoadResult? ISimulatorPluginCsvLoader.LoadFromCsvConfiguration(string alias, string host, ushort port, ushort masterAddress, ushort slaveAddress, ISimulatorNodeCallbacks callbacks)
+        PluginCsvLoadResult? ISimulatorPluginCsvLoader.LoadFromCsvConfiguration(IReadOnlyList<IReadOnlyDictionary<string, string>> configurations, ISimulatorNodeCallbacks callbacks)
         {
-            var retry = new ChannelRetry(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1));
-            var endpoint = new IPEndpoint(host, port);
-            var channel = manager.AddTCPClient(alias, 0u, retry, new List<IPEndpoint> { endpoint }, ChannelListener.None());
+            if (configurations.Count == 0)
+            {
+                return null;
+            }
+
+            var firstConfiguration = configurations[0];
+            using var channelDialog = new Components.ChannelDialog();
+            channelDialog.RestoreCsvConfiguration(firstConfiguration);
+            var channelFactory = channelDialog.ChannelAction;
+            if (channelFactory == null)
+            {
+                return null;
+            }
+
+            var alias = channelDialog.SelectedAlias;
+            var channel = channelFactory(manager);
 
             if (channel == null)
             {
                 return null;
             }
 
-            var channelNode = new ChannelNode(config, channel, callbacks, alias, new Dictionary<string, string>
-            {
-                ["channel_name"] = alias,
-                ["channel_type"] = "TCP Client",
-                ["channel_ip"] = host,
-                ["channel_port"] = port.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                ["channel_retry_min_ms"] = "1000",
-                ["channel_retry_max_ms"] = "5000"
-            });
+            var channelNode = new ChannelNode(config, channel, callbacks, alias, channelDialog.CsvConfiguration);
+            var children = new List<ISimulatorNode>();
+            var legacyFormat = HasValue(firstConfiguration, "legacy_csv_format");
 
-            var masterAlias = alias + "-master";
-            var masterCache = new MeasurementCache();
+            var masterRows = configurations
+                .Where(row => legacyFormat || HasValue(row, "master_name"))
+                .GroupBy(row => GetValue(row, "master_name") ?? "legacy-master", StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First());
 
-            var masterStack = new MasterStackConfig();
-            masterStack.link = new LinkConfig(true)
+            foreach (var row in masterRows)
             {
-                localAddr = masterAddress,
-                remoteAddr = slaveAddress,
-                responseTimeout = TimeSpan.FromSeconds(5),
-                keepAliveTimeout = TimeSpan.FromSeconds(30)
-            };
-            masterStack.master = new MasterConfig();
-
-            var master = channel.AddMaster(masterAlias, masterCache, DefaultMasterApplication.Instance, masterStack);
-            ISimulatorNode? masterNode = null;
-            if (master != null)
-            {
-                master.Enable();
-                masterNode = new MasterNode(masterCache, master, callbacks, masterAlias, new Dictionary<string, string>
+                using var masterDialog = new Components.MasterDialog();
+                masterDialog.RestoreCsvConfiguration(row);
+                var masterAlias = string.IsNullOrWhiteSpace(masterDialog.SelectedAlias) ? alias + "-master" : masterDialog.SelectedAlias;
+                var masterCache = new MeasurementCache();
+                var master = channel.AddMaster(masterAlias, masterCache, DefaultMasterApplication.Instance, masterDialog.Configuration);
+                if (master != null)
                 {
-                    ["master_name"] = masterAlias,
-                    ["master_address"] = masterAddress.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    ["slave_address"] = slaveAddress.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                });
+                    master.Enable();
+                    children.Add(new MasterNode(masterCache, master, callbacks, masterAlias, masterDialog.CsvConfiguration));
+                }
             }
 
-            var outstationModule = config.OutstationModules.FirstOrDefault();
-            ISimulatorNode? outstationNode = null;
-            if (outstationModule != null)
-            {
-                var factory = outstationModule.CreateFactory();
-                var outstationConfig = outstationModule.DefaultConfig;
-                outstationConfig.link = new LinkConfig(false)
-                {
-                    localAddr = slaveAddress,
-                    remoteAddr = masterAddress,
-                    responseTimeout = TimeSpan.FromSeconds(5),
-                    keepAliveTimeout = TimeSpan.FromSeconds(30)
-                };
+            var outstationRows = configurations
+                .Where(row => legacyFormat || HasValue(row, "outstation_name"))
+                .GroupBy(row => GetValue(row, "outstation_name") ?? "legacy-outstation", StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First());
 
-                var outstation = channel.AddOutstation(alias + "-slave", factory.CommandHandler, factory.Application, outstationConfig);
+            foreach (var row in outstationRows)
+            {
+                var moduleName = GetValue(row, "outstation_module");
+                var outstationModule = config.OutstationModules.FirstOrDefault(module =>
+                    string.IsNullOrWhiteSpace(moduleName) || string.Equals(module.Name, moduleName, StringComparison.OrdinalIgnoreCase));
+                if (outstationModule == null)
+                {
+                    continue;
+                }
+
+                var templateName = GetValue(row, "outstation_template");
+                var databaseTemplate = Components.CsvConfigurationSnapshot.RestoreObject<DatabaseTemplate>("outstation_database_template", row);
+                if (!string.IsNullOrWhiteSpace(templateName))
+                {
+                    ((IDNP3Config)config).AddTemplate(templateName, databaseTemplate);
+                }
+
+                using var outstationDialog = new Components.OutstationDialog(config, outstationModule);
+                outstationDialog.RestoreCsvConfiguration(row);
+                var outstationAlias = string.IsNullOrWhiteSpace(outstationDialog.SelectedAlias) ? alias + "-slave" : outstationDialog.SelectedAlias;
+                var outstationConfig = outstationDialog.Configuration;
+                if (row.Keys.Any(key => key.StartsWith("outstation_database_template_", StringComparison.OrdinalIgnoreCase)))
+                {
+                    outstationConfig.databaseTemplate = databaseTemplate;
+                }
+                var factory = outstationModule.CreateFactory();
+                var outstation = channel.AddOutstation(outstationAlias, factory.CommandHandler, factory.Application, outstationConfig);
                 if (outstation != null)
                 {
-                    var instance = factory.CreateInstance(outstation, alias + "-slave", outstationConfig);
+                    var instance = factory.CreateInstance(outstation, outstationAlias, outstationConfig);
                     outstation.Enable();
                     if (instance.ShowFormOnCreation)
                     {
                         instance.ShowForm();
                     }
-                    outstationNode = new OutstationNode(outstation, instance, callbacks, new Dictionary<string, string>
-                    {
-                        ["outstation_name"] = alias + "-slave",
-                        ["master_address"] = masterAddress.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        ["slave_address"] = slaveAddress.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    });
+                    children.Add(new OutstationNode(outstation, instance, callbacks, outstationDialog.CsvConfiguration));
                 }
             }
 
-            return new PluginCsvLoadResult(channelNode, masterNode, outstationNode);
+            return new PluginCsvLoadResult(channelNode, children);
+        }
+
+        private static bool HasValue(IReadOnlyDictionary<string, string> row, string key)
+        {
+            return row.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value);
+        }
+
+        private static string? GetValue(IReadOnlyDictionary<string, string> row, string key)
+        {
+            return row.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;
         }
 
         ISimulatorNode? ISimulatorPlugin.Create(ISimulatorNodeCallbacks callbacks)

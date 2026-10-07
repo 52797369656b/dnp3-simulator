@@ -17,6 +17,7 @@ namespace Automatak.Simulator.DNP3.Components
         readonly IDNP3Config config;
         readonly bool allowTemplateEdit;
         readonly OutstationStackConfig initialConfig;
+        readonly string moduleName;
 
         public OutstationDialog(IDNP3Config config, IOutstationModule module)
         {
@@ -25,6 +26,7 @@ namespace Automatak.Simulator.DNP3.Components
             this.config = config;
             this.initialConfig = module.DefaultConfig;
             this.allowTemplateEdit = module.AllowTemplateEditing;
+            this.moduleName = module.Name;
             this.textBoxID.Text = module.DefaultLogName;
 
             this.linkConfigControl.Configuration = initialConfig.link;            
@@ -108,14 +110,31 @@ namespace Automatak.Simulator.DNP3.Components
                 var link = linkConfigControl.Configuration;
                 var values = CsvConfigurationSnapshot.Capture(this, "outstation");
                 values["outstation_name"] = SelectedAlias;
+                values["outstation_module"] = moduleName;
                 values["outstation_template"] = comboBoxTemplate.SelectedItem?.ToString() ?? string.Empty;
                 values["master_address"] = link.remoteAddr.ToString();
                 values["slave_address"] = link.localAddr.ToString();
-                if (comboBoxTemplate.SelectedItem is string templateName && config.GetTemplateMaybeNull(templateName) is { } template)
-                {
-                    CsvConfigurationSnapshot.AddObjectValues(values, "outstation_template", template);
-                }
+                CsvConfigurationSnapshot.AddObjectValues(values, "outstation_database_template", Configuration.databaseTemplate);
                 return values;
+            }
+        }
+
+        public void RestoreCsvConfiguration(IReadOnlyDictionary<string, string> values)
+        {
+            CsvConfigurationSnapshot.Restore(this, "outstation", values);
+            var link = linkConfigControl.Configuration;
+            if (values.TryGetValue("slave_address", out var slaveAddress) && ushort.TryParse(slaveAddress, out var localAddress))
+            {
+                link.localAddr = localAddress;
+            }
+            if (values.TryGetValue("master_address", out var masterAddress) && ushort.TryParse(masterAddress, out var remoteAddress))
+            {
+                link.remoteAddr = remoteAddress;
+            }
+            linkConfigControl.Configuration = link;
+            if (values.TryGetValue("outstation_name", out var alias))
+            {
+                textBoxID.Text = alias;
             }
         }
 
