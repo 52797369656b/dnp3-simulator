@@ -8,11 +8,11 @@ using System.Runtime.Versioning;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DNP3TestHarness")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Tester DNP3")]
+[assembly: AssemblyDescription("Tester DNP3")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("DNP3TestHarness")]
+[assembly: AssemblyProduct("Tester DNP3")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
